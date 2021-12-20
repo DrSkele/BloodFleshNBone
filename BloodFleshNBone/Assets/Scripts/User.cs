@@ -11,6 +11,8 @@ public class User : Unit
     bool isKnockedBack;
     Vector3 knockBackPosition;
 
+    [SerializeField] AnimationCurve curve;
+
     public User(int healthAmount) : base(healthAmount) { }
 
     private void Update()
@@ -19,31 +21,17 @@ public class User : Unit
         {
             _body.velocity = Vector3.right * 3;
         }
-        else
-        {
-            int knockBackDistance = 10;
-            
-            if(_body.velocity.x < 0.5)
-            {
-                _body.velocity = _body.velocity * (1 - (Mathf.Abs(_body.transform.position.x - knockBackPosition.x) / knockBackDistance));
-            }
-            else
-            {
-                if ((knockBackPosition - this.transform.position).magnitude > knockBackDistance)
-                {
-                    isKnockedBack = false;
-                }
-            }
-        }
     }
 
+    Coroutine coroutine;
     protected override void OnCollisionEnter(Collision collision)
     {
         if(collision.gameObject.GetComponent<Enemy>())
         {
-            isKnockedBack = true;
-            knockBackPosition = this.transform.position;
-            _body.AddExplosionForce(300, collision.transform.position, 100);
+            Debug.Log("what?");
+            if (coroutine != null)
+                StopCoroutine(coroutine);
+            coroutine = StartCoroutine(KnockBack(30, 0.5f));
         }
     }
 
@@ -60,5 +48,24 @@ public class User : Unit
     public override void Damage(params Damage[] damages)
     {
         base.Damage();
+    }
+
+
+    private IEnumerator KnockBack(float distance, float duration)
+    {
+        float timeElapsed = 0;
+
+        float distanceMoved = 0;
+
+        isKnockedBack = true;
+        _body.velocity = Vector3.zero;
+        while(timeElapsed < duration)
+        {
+            distanceMoved += distance * (timeElapsed / duration);
+            _body.transform.position += Vector3.left * distance * (Time.deltaTime * duration);
+            timeElapsed += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        isKnockedBack = false;
     }
 }
