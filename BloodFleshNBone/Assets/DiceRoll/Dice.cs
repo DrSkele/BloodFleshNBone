@@ -5,12 +5,11 @@ using UnityEngine;
 public class Dice : MonoBehaviour
 {
     Rigidbody diceBody;
+    MeshFilter diceMesh;
+
+    Vector3[] faces;
 
     Coroutine diceRoll;
-
-    int lastSideLanded;
-    public int Side { get; private set; }
-    public bool IsSettled { get; private set; } = false;
 
     public delegate void DiceEvent(int side);
     public event DiceEvent OnDiceSettled;
@@ -18,32 +17,33 @@ public class Dice : MonoBehaviour
     private void Awake()
     {
         diceBody = GetComponent<Rigidbody>();
+        diceMesh = GetComponent<MeshFilter>();
         diceBody.useGravity = false;
+        faces = GetDiceFaces(diceMesh);
     }
-
-    public virtual void Roll()
+    public virtual Vector3 GetSide(Vector3 upSide)
     {
-        if (diceRoll != null)
-            return;
-        diceRoll = StartCoroutine(CO_Roll());
-    }
-    private IEnumerator CO_Roll()
-    {
-        IsSettled = false;
-        diceBody.useGravity = true;
-
-        while (!IsSettled)
+        float diff = -1;
+        Vector3 faceUp = Vector3.zero;
+        foreach (var face in faces)
         {
-            yield return new WaitForFixedUpdate();
-
-            if (diceBody.velocity == Vector3.zero)
-                IsSettled = true;
+            var dot = Vector3.Dot(face, upSide);
+            if (dot > diff)
+            {
+                diff = dot;
+                faceUp = face;
+            }
         }
-        Side = lastSideLanded;
-        OnDiceSettled.Invoke(Side);
+        return faceUp;
     }
-    public virtual void BottomSide(int side)
+    private Vector3[] GetDiceFaces(MeshFilter meshFilter)
     {
-        this.lastSideLanded = side;
+        var faces = new List<Vector3>();
+        foreach (var norm in meshFilter.mesh.normals)
+        {
+            if (!faces.Contains(norm))
+                faces.Add(norm);
+        }
+        return faces.ToArray();
     }
 }

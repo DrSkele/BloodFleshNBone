@@ -10,20 +10,7 @@ public class DiceController : MonoBehaviour
     {
         foreach (var dice in dices)
         {
-            dice.OnDiceSettled += ReadEye;
-        }
-    }
-
-    public void ReadEye(int side)
-    {
-        Debug.Log(side);
-    }
-    [ContextMenu("Roll")]
-    public void RollDice()
-    {
-        foreach (var dice in dices)
-        {
-            dice.Roll();
+            Debug.Log(dice.GetSide(Vector3.up));
         }
     }
 }
