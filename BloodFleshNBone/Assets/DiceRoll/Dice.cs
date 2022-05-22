@@ -1,31 +1,37 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEditor;
 public class Dice : MonoBehaviour
 {
-    Rigidbody diceBody;
-    MeshFilter diceMesh;
+    [SerializeField] Rigidbody diceBody;
+    [SerializeField] MeshFilter diceMesh;
 
-    Vector3[] faces;
+    Vector3[] _faces;
+    public Vector3[] Faces
+    {
+        get
+        {
+            if(_faces.Length == 0)
+                _faces = GetDiceFaces(diceMesh);
+            return _faces;
+        }
+    }
+    public Vector3[] WorldSpaceFaces => FaceToWorldspace(diceBody, _faces);
 
-    Coroutine diceRoll;
+    public Vector3 Position => diceBody.position;
 
     public delegate void DiceEvent(int side);
-    public event DiceEvent OnDiceSettled;
 
     private void Awake()
     {
-        diceBody = GetComponent<Rigidbody>();
-        diceMesh = GetComponent<MeshFilter>();
         diceBody.useGravity = false;
-        faces = GetDiceFaces(diceMesh);
     }
     public virtual Vector3 GetSide(Vector3 upSide)
     {
         float diff = -1;
         Vector3 faceUp = Vector3.zero;
-        foreach (var face in faces)
+        foreach (var face in Faces)
         {
             var dot = Vector3.Dot(face, upSide);
             if (dot > diff)
@@ -42,8 +48,20 @@ public class Dice : MonoBehaviour
         foreach (var norm in meshFilter.mesh.normals)
         {
             if (!faces.Contains(norm))
+            {
                 faces.Add(norm);
+                Debug.Log(norm);
+            }
         }
         return faces.ToArray();
+    }
+    private Vector3[] FaceToWorldspace(Rigidbody body, Vector3[] faces)
+    {
+        List<Vector3> worldspaceVectors = new List<Vector3>();
+        foreach (var face in faces)
+        {
+            worldspaceVectors.Add(body.position + body.rotation * face);
+        }
+        return worldspaceVectors.ToArray();
     }
 }
